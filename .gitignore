@@ -1,0 +1,16 @@
+node_modules
+.env
+.env.*
+!.env.example
+
+# Hardhat
+cache
+artifacts
+typechain-types
+coverage
+coverage.json
+
+# Remix / 本地工具生成
+.deps
+.states
+bin

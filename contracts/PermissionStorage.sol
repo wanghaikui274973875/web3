@@ -3,7 +3,7 @@ pragma solidity ^0.8.30;
 
 /**
  * @title PermissionStorage
- * @dev Day16 示例：链上存储「某地址是否被授权」，仅 owner 可改。
+ * @dev 链上记录地址是否被授权；仅 owner 可修改权限与转移所有权。
  */
 contract PermissionStorage {
     address public owner;

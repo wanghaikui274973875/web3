@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 /**
- * Day17：部署 PermissionStorage 到 Sepolia，并做一次链上读写验证。
+ * 将 PermissionStorage 部署到 Sepolia，并校验 setPermission / getPermission。
  *
  * 前置：在项目根目录创建 .env（参考 .env.example），填写 SEPOLIA_RPC_URL 与 SEPOLIA_PRIVATE_KEY。
  */

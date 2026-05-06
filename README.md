@@ -10,6 +10,7 @@ npm run build
 npm test
 npm run deploy:local
 npm run deploy:sepolia:permission
+npm run deploy:sepolia:simple
 ```
 
 Node.js 建议 18+。

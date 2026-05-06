@@ -2,3 +2,11 @@ node_modules
 .env
 .env.*
 !.env.example
+
+# 前端独立 Git 仓库（远程：https://github.com/wanghaikui274973875/web3-dapp.git）
+/web3-dapp/
+
+# Hardhat 生成物（合约项目在 hardhat/）
+hardhat/cache
+hardhat/artifacts
+hardhat/typechain-types

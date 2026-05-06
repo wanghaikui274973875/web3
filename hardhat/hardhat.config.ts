@@ -25,7 +25,9 @@ const config: HardhatUserConfig = {
   networks: {
     sepolia: {
       url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: sepoliaPrivateKey()
+      accounts: sepoliaPrivateKey(),
+      // 避免部分地区/网络到 RPC 较慢时出现 UND_ERR_CONNECT_TIMEOUT
+      timeout: 120_000
     }
   }
 };

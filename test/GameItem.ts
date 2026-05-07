@@ -45,4 +45,25 @@ describe("GameItem", function () {
       "OwnableUnauthorizedAccount"
     );
   });
+
+  it("单地址 mint 超过 MAX_MINT_PER_WALLET 时失败", async function () {
+    const { nft, alice } = await deployFixture();
+    const cap = await nft.MAX_MINT_PER_WALLET();
+    for (let i = 0; i < Number(cap); i++) {
+      await nft.connect(alice).mint(`https://x/${i}.json`);
+    }
+    await expect(nft.connect(alice).mint("https://x/over.json")).to.be.revertedWithCustomError(nft, "MintCapExceeded");
+  });
+
+  it("awardItem 计入同一地址上限", async function () {
+    const { nft, owner, alice } = await deployFixture();
+    const cap = await nft.MAX_MINT_PER_WALLET();
+    for (let i = 0; i < Number(cap); i++) {
+      await nft.connect(owner).awardItem(alice.address, `a:${i}`);
+    }
+    await expect(nft.connect(owner).awardItem(alice.address, "over")).to.be.revertedWithCustomError(
+      nft,
+      "MintCapExceeded"
+    );
+  });
 });

@@ -11,6 +11,9 @@ npm test
 npm run deploy:local
 npm run deploy:sepolia:permission
 npm run deploy:sepolia:simple
+npm run deploy:sepolia:memo
+npm run deploy:sepolia:erc20
+npm run deploy:sepolia:nft
 ```
 
 Node.js 建议 18+。

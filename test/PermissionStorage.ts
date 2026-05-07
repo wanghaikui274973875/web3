@@ -1,11 +1,12 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
+import type { PermissionStorage } from "../typechain-types";
 
 describe("PermissionStorage", function () {
   async function deployFixture() {
     const [owner, alice, bob] = await ethers.getSigners();
     const PermissionStorage = await ethers.getContractFactory("PermissionStorage");
-    const storage = await PermissionStorage.deploy();
+    const storage = (await PermissionStorage.deploy()) as unknown as PermissionStorage;
     await storage.waitForDeployment();
     return { storage, owner, alice, bob };
   }

@@ -11,7 +11,8 @@
     "deploy:sepolia:simple": "hardhat run scripts/deploySimpleStorageSepolia.ts --network sepolia",
     "deploy:sepolia:memo": "hardhat run scripts/deployMemoStorageSepolia.ts --network sepolia",
     "deploy:sepolia:erc20": "hardhat run scripts/deploySampleErc20Sepolia.ts --network sepolia",
-    "deploy:sepolia:nft": "hardhat run scripts/deployGameItemSepolia.ts --network sepolia"
+    "deploy:sepolia:nft": "hardhat run scripts/deployGameItemSepolia.ts --network sepolia",
+    "deploy:sepolia:box": "hardhat run scripts/deployBoxUpgradeSepolia.ts --network sepolia"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",

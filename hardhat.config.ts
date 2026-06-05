@@ -16,19 +16,27 @@ const config: HardhatUserConfig = {
       evmVersion: "cancun"
     }
   },
+  networks: {
+    // 内置链：跑测试/脚本用；取消 mining 注释后 `npx hardhat node` 每 12s 出一个块
+    // hardhat: { mining: { auto: true, interval: 12_000 } },
+    localhost: {
+      url: "http://127.0.0.1:8545",
+      chainId: 31337
+    },
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || "",
+      accounts: sepoliaPrivateKey(),
+      timeout: 120_000
+    }
+  },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts"
   },
-  networks: {
-    sepolia: {
-      url: process.env.SEPOLIA_RPC_URL || "",
-      accounts: sepoliaPrivateKey(),
-      // 避免部分地区/网络到 RPC 较慢时出现 UND_ERR_CONNECT_TIMEOUT
-      timeout: 120_000
-    }
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY || ""
   }
 };
 

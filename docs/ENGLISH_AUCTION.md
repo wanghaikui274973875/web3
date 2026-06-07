@@ -176,16 +176,52 @@ npm run dev
 
 ---
 
-## 5. Sepolia 联调测试流程（手动）
+## 5. 前端测试 Panel 说明
+
+页面组件：`web3-dapp/src/components/EnglishAuctionPanel.vue`（App 中位于 GameItem 等面板下方）。
+
+### 5.1 面板区域一览
+
+| 区域 | 作用 |
+|------|------|
+| **合约地址** | 显示 `.env` 中的 House / GameItem / SampleERC20 |
+| **Sepolia 快速测试流程** | 可折叠的 6 步操作指引 |
+| **刷新轮次列表** | 读取链上各轮；连接 Sepolia 钱包后 **自动刷新** |
+| **轮次芯片 `#n · 状态`** | 切换当前轮次；绿色「可出价」= `isBiddable` |
+| **轮次详情** | 托管、起拍/加价、最高价、时间、seller |
+| **开拍准备（seller）** | 四步检查 +「授权并托管 NFT」 |
+| **出价区** | 下一口价、`bid` / `approve + bidWithToken` |
+| **结算区** | finalize / claim* / reclaim / abort |
+| **创建新轮次** | `createRound`；成功后自动选中并提示托管 |
+
+### 5.2 空列表（你截图中的状态）
+
+新部署 House（`roundCounter = 0`）时，刷新后 **没有轮次芯片**，仅显示：
+
+> 当前 House 上暂无轮次…请先在 GameItem mint，再 createRound。
+
+例如 House `0xee9a5A0c…` 即为该状态，**不是 bug**。
+
+### 5.3 与 Panel 对照的测试顺序
+
+1. **GameItem** → mint  
+2. **创建新轮次** → createRound  
+3. **上方轮次 · 开拍准备** → 授权并托管  
+4. **换买家钱包** → bid  
+5. **endTime 后** → finalize → claim  
+
+---
+
+## 6. Sepolia 联调测试流程（手动）
 
 以下以 **卖家钱包 A**、**买家钱包 B** 为例（可用 MetaMask 切换账户）。
 
-### 5.1 卖家：准备 NFT
+### 6.1 卖家：准备 NFT
 
 1. 连接钱包 A（Sepolia）。
 2. 在 **GameItem** 面板 `mint` 一个 NFT，记下 `tokenId`（如 `0`）。
 
-### 5.2 卖家：创建拍卖轮次
+### 6.2 卖家：创建拍卖轮次
 
 1. 打开 **英式拍卖** 面板。
 2. 填写 `tokenId`、开拍延迟（分钟）、持续时长、起拍价 `minBid`、加价幅度 `minIncrement`。
@@ -193,7 +229,7 @@ npm run dev
 4. 点击 **createRound**。
 5. 创建成功后会 **自动选中** 新轮次，并提示下一步。
 
-### 5.3 卖家：授权并托管
+### 6.3 卖家：授权并托管
 
 1. 查看「开拍准备」四步检查（NFT 存在 → 你持有 → approve → deposit）。
 2. 点击 **授权并托管 NFT**（一键 `approve` + `depositItem`）。
@@ -201,7 +237,7 @@ npm run dev
 
 > **规则**：`depositItem` 须在 **endTime 之前** 完成；**开拍后仍可补托管**（不必在 startTime 之前）。
 
-### 5.4 买家：出价
+### 6.4 买家：出价
 
 1. 切换到钱包 B（非卖家）。
 2. 选中可出价轮次（显示「可出价」徽章）。
@@ -210,7 +246,7 @@ npm run dev
 5. **ERC20 轮次**：点击 `approve + bidWithToken`（前端会先 approve 再出价）。
 6. 被超越后，在 **claimRefund** 领取退款（Pull 模型）。
 
-### 5.5 结束与结算
+### 6.5 结束与结算
 
 拍卖 **endTime 过后**：
 
@@ -227,7 +263,7 @@ npm run dev
 
 ---
 
-## 6. Sepolia 联调截图清单（建议留存）
+## 7. Sepolia 联调截图清单（建议留存）
 
 完成一次完整联调后，建议按下列顺序截图，便于写报告、PR 或排查问题。截图可存放在 `hardhat/docs/english-auction-screenshots/`（目录需自行创建，**勿提交含私钥/助记词的画面**）。
 
@@ -256,11 +292,11 @@ npm run dev
 
 ---
 
-## 7. Etherscan 合约验证
+## 8. Etherscan 合约验证
 
 验证后 Etherscan 会显示 **Read Contract / Write Contract**，可用网页直接调 `getRound`、`roundCounter` 等，无需写脚本。
 
-### 7.1 申请 API Key
+### 8.1 申请 API Key
 
 1. 登录 [Etherscan](https://etherscan.io/)（Sepolia 使用同一账号）。  
 2. 打开 [API Keys](https://etherscan.io/myapikey) 创建 Key。  
@@ -270,7 +306,7 @@ npm run dev
 ETHERSCAN_API_KEY=你的Key
 ```
 
-### 7.2 验证命令（无构造参数）
+### 8.2 验证命令（无构造参数）
 
 **EnglishAuctionHouse** 与 **GameItem** 部署时均无 constructor 参数：
 
@@ -286,7 +322,7 @@ npx hardhat verify --network sepolia <House地址>
 
 将 `<GameItem地址>`、`<House地址>` 替换为部署终端输出的地址。
 
-### 7.3 验证 SampleERC20（有构造参数）
+### 8.3 验证 SampleERC20（有构造参数）
 
 构造签名为：`constructor(string name, string symbol, uint8 decimals, uint256 totalSupply)`  
 `totalSupply` 为 **最小单位**（wei 精度），不是人类可读数量。
@@ -307,13 +343,13 @@ npx hardhat verify --network sepolia <地址> "MyToken" "MTK" 18 500000000000000
 
 `500000000000000000000000` = `parseUnits("500000", 18)`。
 
-### 7.4 验证成功标志
+### 8.4 验证成功标志
 
 1. 终端输出 `Successfully verified contract`。  
 2. 打开 `https://sepolia.etherscan.io/address/<合约地址>#code`，标签页由 **Contract**（未验证）变为带绿色勾的 **Contract Source Code Verified**。  
 3. 出现 **Read as Proxy** 以外的 **Read Contract**、**Write Contract** 标签（非代理合约直接显示）。
 
-### 7.5 常见验证问题
+### 8.5 常见验证问题
 
 | 现象 | 处理 |
 |------|------|
@@ -322,7 +358,7 @@ npx hardhat verify --network sepolia <地址> "MyToken" "MTK" 18 500000000000000
 | `Bytecode does not match` | 编译器版本 / optimizer / viaIR 与部署时不一致；在本仓库重新 `npm run build` 后用相同源码再 verify |
 | SampleERC20 参数错误 | 核对 name/symbol/decimals/**最小单位 totalSupply** |
 
-### 7.6 验证后在 Etherscan 上快速自检
+### 8.6 验证后在 Etherscan 上快速自检
 
 **EnglishAuctionHouse → Read Contract：**
 
@@ -337,7 +373,7 @@ npx hardhat verify --network sepolia <地址> "MyToken" "MTK" 18 500000000000000
 
 ---
 
-## 8. 链上环境检查（可选）
+## 9. 链上环境检查（可选）
 
 `scripts/checkSepoliaEnv.ts` 可读取 GameItem / House / SampleERC20 的链上状态（`roundCounter`、各轮 `itemDeposited`、`isBiddable` 等）。
 
@@ -349,7 +385,7 @@ npx hardhat run scripts/checkSepoliaEnv.ts --network sepolia
 
 ---
 
-## 9. 常见问题
+## 10. 常见问题
 
 | 现象 | 原因 | 处理 |
 |------|------|------|
@@ -362,7 +398,7 @@ npx hardhat run scripts/checkSepoliaEnv.ts --network sepolia
 
 ---
 
-## 10. 命令速查
+## 11. 命令速查
 
 ```bash
 # hardhat/
@@ -385,7 +421,7 @@ npm run build                              # 类型检查 + 生产构建
 
 ---
 
-## 11. 延伸阅读
+## 12. 延伸阅读
 
 - Hardhat 工程总览：[../README.md](../README.md)
 - 前端联调说明：[../../web3-dapp/README.md](../../web3-dapp/README.md)

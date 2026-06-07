@@ -87,6 +87,9 @@ npm run deploy:local
 | `npm run deploy:sepolia:memo` | 部署 `MemoStorage` 并校验 |
 | `npm run deploy:sepolia:erc20` | 部署 `SampleERC20`（名称/符号/小数/总量见脚本内参数） |
 | `npm run deploy:sepolia:nft` | 部署 `GameItem`（ERC721） |
+| `npm run deploy:sepolia:english-auction` | 部署 `EnglishAuctionHouse`（英式拍卖） |
+
+英式拍卖完整部署、测试与 Sepolia 联调步骤见 **[docs/ENGLISH_AUCTION.md](docs/ENGLISH_AUCTION.md)**。
 
 所有 `deploy:sepolia:*` 均需在 **`hardhat/`** 目录、已配置 `.env` 的前提下执行，且 `--network sepolia` 已写在脚本调用中。
 
@@ -124,6 +127,7 @@ npm run deploy:local
 | [test/MemoStorage.ts](test/MemoStorage.ts) | `MemoStorage` |
 | [test/SampleERC20.ts](test/SampleERC20.ts) | `SampleERC20` |
 | [test/GameItem.ts](test/GameItem.ts) | `GameItem` |
+| [test/EnglishAuctionHouse.ts](test/EnglishAuctionHouse.ts) | `EnglishAuctionHouse`（Pull 退款/结算、多轮拍卖） |
 | [test/Reentrancy.ts](test/Reentrancy.ts) | 脆弱银行可被抽干 + 安全银行攻击失败且受害者可提款 |
 
 说明：`SimpleStorage` 当前**无**独立测试文件；可用 `npx hardhat console` 或自行在 `test/` 下补充用例。
@@ -148,6 +152,9 @@ npx hardhat test test/GameItem.ts
 | `deploy:sepolia:memo` | `VITE_MEMO_STORAGE_ADDRESS` |
 | `deploy:sepolia:erc20` | `VITE_SAMPLE_ERC20_ADDRESS` |
 | `deploy:sepolia:nft` | `VITE_GAME_ITEM_NFT_ADDRESS` |
+| `deploy:sepolia:english-auction` | `VITE_ENGLISH_AUCTION_HOUSE_ADDRESS`（另需 NFT；ERC20 轮次还需 `VITE_SAMPLE_ERC20_ADDRESS`） |
+
+英式拍卖部署与测试详见 **[docs/ENGLISH_AUCTION.md](docs/ENGLISH_AUCTION.md)**。
 
 **注意**：合约逻辑或构造参数变更后必须**重新部署**并更新前端地址；旧地址与新版 ABI 可能不兼容。
 

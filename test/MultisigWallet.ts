@@ -257,8 +257,9 @@ describe("MultisigWallet", function () {
   it("执行失败应 bubbling revert", async function () {
     const { wallet, accounts } = await deployMultisig();
     const Token = await ethers.getContractFactory("SampleERC20");
-    const token = (await Token.deploy("T", "T", 18, 0n)) as unknown as SampleERC20;
+    const token = (await Token.deploy("T", "T", 18, ethers.parseEther("1"))) as unknown as SampleERC20;
     await token.waitForDeployment();
+    // 多签钱包余额为 0，transfer 应失败
     const data = token.interface.encodeFunctionData("transfer", [
       accounts[9].address,
       ethers.parseEther("1")

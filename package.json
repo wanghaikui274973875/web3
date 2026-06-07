@@ -13,6 +13,7 @@
     "deploy:sepolia:erc20": "hardhat run scripts/deploySampleErc20Sepolia.ts --network sepolia",
     "deploy:sepolia:nft": "hardhat run scripts/deployGameItemSepolia.ts --network sepolia",
     "deploy:sepolia:box": "hardhat run scripts/deployBoxUpgradeSepolia.ts --network sepolia",
+    "deploy:sepolia:english-auction": "hardhat run scripts/deployEnglishAuctionSepolia.ts --network sepolia",
     "simulate:auction": "hardhat run scripts/simulateDutchAuction.ts",
     "simulate:auction:reclaim": "hardhat run scripts/simulateDutchAuction.ts -- --scenario reclaim",
     "simulate:auction:cancel": "hardhat run scripts/simulateDutchAuction.ts -- --scenario cancel",

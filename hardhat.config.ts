@@ -1,6 +1,7 @@
 import "dotenv/config";
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "./tasks/multisig";
 
 function sepoliaPrivateKey(): string[] {
   const raw = process.env.SEPOLIA_PRIVATE_KEY?.trim();

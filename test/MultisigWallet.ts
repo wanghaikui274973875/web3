@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import type { MultisigWallet, SampleERC20 } from "../typechain-types";
+import type { MultisigWallet, MultisigWalletFactory, SampleERC20 } from "../typechain-types";
 
 describe("MultisigWallet", function () {
   const THRESHOLD = 2;
@@ -8,10 +8,17 @@ describe("MultisigWallet", function () {
   async function deployMultisig(signers = 3) {
     const accounts = await ethers.getSigners();
     const owners = accounts.slice(0, signers).map((s) => s.address);
-    const Factory = await ethers.getContractFactory("MultisigWallet");
-    const wallet = (await Factory.deploy(owners, THRESHOLD)) as unknown as MultisigWallet;
-    await wallet.waitForDeployment();
-    return { wallet, owners, accounts };
+    const FactoryContract = await ethers.getContractFactory("MultisigWalletFactory");
+    const factory = (await FactoryContract.deploy()) as unknown as MultisigWalletFactory;
+    await factory.waitForDeployment();
+
+    const salt = await factory.computeSalt(owners, THRESHOLD);
+    const tx = await factory.createWallet(owners, THRESHOLD, salt);
+    await tx.wait();
+    const walletAddr = await factory.walletOf(salt);
+    const wallet = (await ethers.getContractAt("MultisigWallet", walletAddr)) as unknown as MultisigWallet;
+
+    return { wallet, owners, accounts, factory, salt };
   }
 
   /** 按 owner 地址升序收集 EIP-712 签名（合约要求 signer 地址严格递增） */
@@ -78,15 +85,39 @@ describe("MultisigWallet", function () {
 
   it("部署：无效 threshold 应 revert", async function () {
     const [a, b] = await ethers.getSigners();
-    const Factory = await ethers.getContractFactory("MultisigWallet");
-    await expect(Factory.deploy([a.address, b.address], 0)).to.be.revertedWithCustomError(
-      Factory,
+    const owners = [a.address, b.address];
+    const FactoryContract = await ethers.getContractFactory("MultisigWalletFactory");
+    const WalletContract = await ethers.getContractFactory("MultisigWallet");
+    const factory = (await FactoryContract.deploy()) as unknown as MultisigWalletFactory;
+    await factory.waitForDeployment();
+
+    const salt0 = await factory.computeSalt(owners, 0);
+    await expect(factory.createWallet(owners, 0, salt0)).to.be.revertedWithCustomError(
+      WalletContract,
       "InvalidThreshold"
     );
-    await expect(Factory.deploy([a.address], 2)).to.be.revertedWithCustomError(
-      Factory,
+
+    const saltBad = await factory.computeSalt([a.address], 2);
+    await expect(factory.createWallet([a.address], 2, saltBad)).to.be.revertedWithCustomError(
+      WalletContract,
       "InvalidThreshold"
     );
+  });
+
+  it("CREATE2：部署前可向预测地址转入 ETH", async function () {
+    const { accounts, factory, owners } = await deployMultisig();
+    const amount = ethers.parseEther("0.25");
+
+    const otherOwners = accounts.slice(3, 6).map((s) => s.address);
+    const salt = await factory.computeSalt(otherOwners, 2);
+    const predicted = await factory.predictAddress(salt);
+
+    await accounts[0].sendTransaction({ to: predicted, value: amount });
+    expect(await ethers.provider.getBalance(predicted)).to.equal(amount);
+
+    await factory.createWallet(otherOwners, 2, salt);
+    expect(await ethers.provider.getBalance(predicted)).to.equal(amount);
+    expect(await factory.walletOf(salt)).to.equal(predicted);
   });
 
   it("链上多签：submit → confirm → execute 转 ETH", async function () {

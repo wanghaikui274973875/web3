@@ -7,6 +7,9 @@ pragma solidity ^0.8.30;
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 // 引入 OpenZeppelin 重入锁：通过 nonReentrant 修饰符防止重入攻击
 
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+// 引入 Initializable：配合 CREATE2 最小代理，在 clone 上一次性 initialize
+
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 // 引入 EIP-712 结构化数据签名标准，用于链下多签 digest 构造与验证
 
@@ -17,7 +20,8 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 /// @notice M-of-N 多签钱包示例：支持链上确认执行与 EIP-712 链下签名一次性执行。
 /// @dev 安全：CEI + nonReentrant + 执行失败 bubbling revert；owner 变更时同步清理待执行交易的确认。
 ///      Gas：custom error、calldata、执行前短路校验；链下签名路径避免多次 confirm 上链。
-contract MultisigWallet is ReentrancyGuard, EIP712 {
+///      部署：由 MultisigWalletFactory 通过 CREATE2 + EIP-1167 克隆部署；本合约为单例实现，不可直接带参构造。
+contract MultisigWallet is ReentrancyGuard, EIP712, Initializable {
     // 合约继承：重入保护 + EIP-712 域分隔与类型化哈希
 
     using ECDSA for bytes32;
@@ -176,31 +180,17 @@ contract MultisigWallet is ReentrancyGuard, EIP712 {
         _;
     }
 
+    /// @custom:oz-upgrades-unsafe-allow constructor
+    constructor() EIP712("MultisigWallet", "1") {
+        // 实现合约构造：仅设置 EIP-712 域；禁止在实现地址上 initialize
+        _disableInitializers();
+    }
+
+    /// @notice 在 CREATE2 克隆钱包上初始化 owners 与 threshold（仅可调用一次）
     /// @param owners_ 初始 owner 列表（不可重复、不可零地址）
     /// @param threshold_ 执行交易所需最少确认数（1 <= threshold <= owners.length）
-    constructor(address[] memory owners_, uint256 threshold_) EIP712("MultisigWallet", "1") {
-        // 构造函数：初始化 EIP-712 域名 "MultisigWallet" / 版本 "1"
-        if (threshold_ == 0 || threshold_ > owners_.length) revert InvalidThreshold();
-        // threshold 至少为 1，且不能超过 owner 总数
-        if (owners_.length > MAX_OWNERS) revert TooManyOwners();
-        // owner 数量硬上限
-
-        for (uint256 i = 0; i < owners_.length; ++i) {
-            // 遍历部署时传入的每一个 owner
-            address owner = owners_[i];
-            if (owner == address(0)) revert ZeroAddress();
-            // 禁止零地址 owner
-            if (_ownerIndex[owner] != 0) revert DuplicateOwner();
-            // 禁止列表内重复
-
-            _owners.push(owner);
-            // 写入 owner 数组
-            _ownerIndex[owner] = i + 1;
-            // 记录 1-based 索引（与数组下标 i 对应：下标 i → 存储 i+1）
-        }
-
-        threshold = threshold_;
-        // 写入全局确认阈值
+    function initialize(address[] calldata owners_, uint256 threshold_) external initializer {
+        _initialize(owners_, threshold_);
     }
 
     receive() external payable {
@@ -465,6 +455,31 @@ contract MultisigWallet is ReentrancyGuard, EIP712 {
     }
 
     // ─── internal（仅合约内部调用）──────────────────────────────────────────
+
+    function _initialize(address[] calldata owners_, uint256 threshold_) private {
+        // 内部初始化：供 initialize 调用，校验 owners 并写入 threshold
+        if (threshold_ == 0 || threshold_ > owners_.length) revert InvalidThreshold();
+        // threshold 至少为 1，且不能超过 owner 总数
+        if (owners_.length > MAX_OWNERS) revert TooManyOwners();
+        // owner 数量硬上限
+
+        for (uint256 i = 0; i < owners_.length; ++i) {
+            // 遍历传入的每一个 owner
+            address owner = owners_[i];
+            if (owner == address(0)) revert ZeroAddress();
+            // 禁止零地址 owner
+            if (_ownerIndex[owner] != 0) revert DuplicateOwner();
+            // 禁止列表内重复
+
+            _owners.push(owner);
+            // 写入 owner 数组
+            _ownerIndex[owner] = i + 1;
+            // 记录 1-based 索引（与数组下标 i 对应：下标 i → 存储 i+1）
+        }
+
+        threshold = threshold_;
+        // 写入全局确认阈值
+    }
 
     function _execute(address to, uint256 value, bytes memory data) private {
         // 统一的底层执行：ETH 转账 + 任意合约调用
